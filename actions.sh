@@ -146,6 +146,10 @@ function get_all_powervs_instances_details() {
 	done < /tmp/powervs-instances
 }
 
+function get_users() {
+	ibmcloud account users
+}
+
 function get_networks() {
 	ibmcloud pi networks
 }
@@ -702,7 +706,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get All Services" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get All Services" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -928,6 +932,10 @@ function run() {
 	    	identify_os
 		install_pvsadm_dependencies
                 install_pvsadmin
+                break
+                ;;
+            "Get Users")
+                get_users
                 break
                 ;;
             "Quit")
