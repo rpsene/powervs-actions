@@ -20,6 +20,7 @@ trap ctrl_c INT
 
 function ctrl_c() {
     echo "Bye!"
+    exit 0
 }
 
 function check_dependencies() {
