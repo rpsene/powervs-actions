@@ -25,7 +25,7 @@ function check_dependencies() {
         if ! command -v $i &> /dev/null; then
             echo "$i could not be found, exiting!"
             exit 1
-        fii
+        fi
     done
 }
 
