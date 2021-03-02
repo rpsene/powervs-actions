@@ -43,12 +43,13 @@ function create_nfs_server () {
     SERVER_ID=$1
     SERVER_IMAGE=$2
     PUBLIC_NETWORK=$3
-    SSH_KEY_NAME=$4
+    PRIVATE_NETWORK=$4
+    SSH_KEY_NAME=$5
 
     # Default values.
-    SERVER_MEMORY=$5
-    SERVER_PROCESSOR=$6
-    SERVER_SYS_TYPE=$7
+    SERVER_MEMORY=$6
+    SERVER_PROCESSOR=$7
+    SERVER_SYS_TYPE=$8
 
     ibmcloud pi instance-create $SERVER_NAME --image $SERVER_IMAGE --memory $SERVER_MEMORY --network $PUBLIC_NETWORK --processors $SERVER_PROCESSOR --processor-type shared --key-name $SSH_KEY_NAME --sys-type $SERVER_SYS_TYPE --json >> server.log
 
@@ -116,6 +117,7 @@ function run (){
     ### Set this variables accordingly
     SERVER_IMAGE=
     PUBLIC_NETWORK=
+    PRIVATE_NETWORK=
     SSH_KEY_NAME=
     SERVER_MEMORY=4
     SERVER_PROCESSOR=1
@@ -125,7 +127,7 @@ function run (){
     check_dependencies
     check_connectivity
     start=`date +%s`
-    create_nfs_server $SERVER_ID $SERVER_IMAGE $PUBLIC_NETWORK $SSH_KEY_NAME $SERVER_MEMORY $SERVER_PROCESSOR $SERVER_SYS_TYPE
+    create_nfs_server $SERVER_ID $SERVER_IMAGE $PUBLIC_NETWORK $PRIVATE_NETWORK $SSH_KEY_NAME $SERVER_MEMORY $SERVER_PROCESSOR $SERVER_SYS_TYPE
     end=`date +%s`
     echo "*****************************************************"
     runtime=$((end-start))
