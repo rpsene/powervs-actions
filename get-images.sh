@@ -37,7 +37,7 @@ for cnr in "${CNRs[@]}"; do
     echo "--------------------------------------------------"
     echo $cnr | awk '{split($0,var,":"); print var[6]}'
     set_powervs "$cnr"
-    ibmcloud pi images --json | jq -r ".Payload.images[].name"
+    ibmcloud pi images --json | jq -r '.Payload.images[] | .name + ", " + .state'
 done
 
 }
