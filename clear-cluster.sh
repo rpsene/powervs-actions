@@ -123,8 +123,14 @@ function help() {
 
 function run() {
 
+    # your IBM Cloud API Key
     API_KEY=$1
+
+    # the PowerVS CRN
+    # ibmcloud pi service-list --json | jq '.[] | "\(.CRN),\(.Name)"'
     POWERVS=$2
+
+    # some string which identify the cluster
     CLUSTER_ID=$3
 
     if [ -z "$API_KEY" ]; then
