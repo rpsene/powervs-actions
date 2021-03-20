@@ -128,7 +128,7 @@ function run() {
 
     # the PowerVS CRN
     # ibmcloud pi service-list --json | jq '.[] | "\(.CRN),\(.Name)"'
-    POWERVS=$2
+    POWERVS_CRN=$2
 
     # some string which identify the cluster
     CLUSTER_ID=$3
@@ -137,7 +137,7 @@ function run() {
         echo "API_KEY was not set."
         exit 1
     fi
-    if [ -z "$POWERVS" ]; then
+    if [ -z "$POWERVS_CRN" ]; then
         echo "POWERVS was not set."
         exit 1
     fi
@@ -150,7 +150,7 @@ function run() {
     check_connectivity
 
     authenticate $API_KEY
-    set_powervs $POWERVS
+    set_powervs $POWERVS_CRN
 
     delete_vms $CLUSTER_ID
     delete_ssh_key $CLUSTER_ID
