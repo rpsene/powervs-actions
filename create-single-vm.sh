@@ -37,6 +37,28 @@ function check_connectivity() {
     fi
 }
 
+function authenticate() {
+    
+    local APY_KEY="$1"
+    
+    if [ -z "$APY_KEY" ]; then
+        echo "API KEY was not set."
+        exit
+    fi
+    ibmcloud login --no-region --apikey $APY_KEY
+}
+
+function set_powervs() {
+    
+    local CRN="$1"
+    
+    if [ -z "$CRN" ]; then
+        echo "CRN was not set."
+        exit
+    fi
+    ibmcloud pi st "$CRN"
+}
+
 function create_server () {
 
     local SERVER_ID=$1
@@ -122,14 +144,19 @@ function run (){
     SSH_KEY_NAME=
     SERVER_MEMORY=
     SERVER_PROCESSOR=
-    SERVER_SYS_TYPE=s922
+    SERVER_SYS_TYPE=
     SSH_USER=
+    API_KEY=
+    PVS_CRN=
     ####
-
+    
+    start=$(date +%s)
     check_dependencies
     check_connectivity
-    start=$(date +%s)
-    create_server "$SERVER_ID" "$SERVER_IMAGE" "$PUBLIC_NETWORK" "$SSH_KEY_NAME" "$SERVER_MEMORY" "$SERVER_PROCESSOR" "$SERVER_SYS_TYPE" "$SSH_USER"
+    authenticate "$API_KEY"
+    set_powervs "$PVS_CRN"
+    create_server "$SERVER_ID" "$SERVER_IMAGE" "$PUBLIC_NETWORK" "$SSH_KEY_NAME" \
+    "$SERVER_MEMORY" "$SERVER_PROCESSOR" "$SERVER_SYS_TYPE" "$SSH_USER"
     end=$(date +%s)
     echo "*****************************************************"
     runtime=$((end-start))
