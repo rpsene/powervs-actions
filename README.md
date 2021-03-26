@@ -22,3 +22,8 @@ An user friendly set of PowerVS actions.
 17) Add New SSH Key                     35) Quit
 18) Remove SSH Key
 ```
+
+```
+curl -sL https://raw.githubusercontent.com/rpsene/powervs-actions/main/actions.sh -o ./powervs-actions
+chmod +x ./powervs-actions
+```
