@@ -22,28 +22,3 @@ An user friendly set of PowerVS actions.
 17) Add New SSH Key                     35) Quit
 18) Remove SSH Key
 ```
-
-# Step 0
-
-Execute: 
-
-```
-1) Check Script Dependencies
-2) Install IBM Cloud CLI
-3) Connect to IBM Cloud
-4) Get All Services
-5) Set Active PowerVS
-```
-
-# Creating a VM
-
-1) Execute Step 0
-22) Create Public Network (save the ID or name of the public network)
-28) Create Volume (this is optional, if you do not need extra storage ignore it)
-13) Get Images (to check what is available to use)
-16) Get SSH Keys (if you do not remember the name of your ssh key)
-17) Add New SSH Key (if you need to create a new SSH key)
-
-```
-ibmcloud pi instance-create VM_NAME --image BASE_IMAGE --memory AMOUNT_MEMORY --network NETWORK_NAME --processors AMOUNT_PROCESSORS --processor-type shared --volumes "ID_VOLUME" --key-name SSH_KEY --sys-type s922
-```
