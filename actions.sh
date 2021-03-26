@@ -1,7 +1,7 @@
 #!/bin/bash
 
 : '
-Copyright (C) 2020 IBM Corporation
+Copyright (C) 2020, 2021 IBM Corporation
 
 Licensed under the Apache License, Version 2.0 (the “License”);
 you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@ distributed under the License is distributed on an “AS IS” BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
     Rafael Sene <rpsene@br.ibm.com> - Initial implementation.
 '
 
@@ -75,7 +76,23 @@ function install_ibmcloud() {
 }
 
 function get_all_services() {
-	ibmcloud pi service-list
+
+	VAR=($(ibmcloud pi service-list --json | jq -r '.[] | "\(.CRN),\(.Name)"'))
+
+	echo
+	echo "--------------------------"
+	for i in "${VAR[@]}"
+	do
+		NAME=$(echo $i | awk -F ',' '{print $2}')
+		CRN=$(echo $i | awk -F ',' '{print $1}')
+		GUID=$(echo $CRN | awk -F ':' '{print $8}')
+
+		echo "PowerVS:"
+		echo "	Name: $NAME"
+		echo "	GUID: $GUID"
+		echo "	CRN : $CRN"
+		echo "----------"
+	done
 }
 
 function get_all_images() {
@@ -707,7 +724,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get All Services" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -725,7 +742,7 @@ function run() {
                 authenticate $API_KEY
                 break
                 ;;
-            "Get All Services")
+            "Get PowerVS Services CRN and GUID")
                 get_all_services
                 break
                 ;;
