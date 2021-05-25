@@ -107,6 +107,19 @@ function get_all_services_crn() {
 	mv /tmp/all-crn $(pwd)/crns
 }
 
+function get_all_vms_ips() {
+
+	get_all_services_crn
+	rm -f $(pwd)/crns
+	IFS=$'\n' read -d '' -r -a crn < $(pwd)/crns
+	for i in "${crn[@]}"
+	do
+		CRN=$(echo $i | awk -F ',' '{print $1}')
+		set_powervs "$CRN"
+		get_instances_ips
+	done	
+}
+
 function get_all_images() {
 	ibm cloud pi images
 }
@@ -736,7 +749,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -839,6 +852,10 @@ function run() {
                 get_instances_ips
                 break
                 ;;
+            "Get All VMs IPs")
+	    	get_all_vms_ips
+		break
+		;;
             "Get Volumes")
                 get_volumes
                 break
