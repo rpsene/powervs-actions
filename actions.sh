@@ -103,8 +103,8 @@ function get_all_services_crn() {
 	do
 		CRN=$(echo $i | awk -F ',' '{print $1}')
 		echo "$CRN" >> /tmp/all-crn
-		mv /tmp/all-crn $(pwd)/crns
 	done
+	mv /tmp/all-crn $(pwd)/crns
 }
 
 function get_all_images() {
