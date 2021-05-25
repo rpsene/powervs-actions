@@ -98,7 +98,7 @@ function get_all_services() {
 function get_all_services_crn() {
 
 	VAR=($(ibmcloud pi service-list --json | jq -r '.[] | "\(.CRN),\(.Name)"'))
-
+	rm -f $(pwd)/crns
 	for i in "${VAR[@]}"
 	do
 		CRN=$(echo $i | awk -F ',' '{print $1}')
@@ -110,7 +110,6 @@ function get_all_services_crn() {
 function get_all_vms_ips() {
 
 	get_all_services_crn
-	rm -f $(pwd)/crns
 	IFS=$'\n' read -d '' -r -a crn < $(pwd)/crns
 	for i in "${crn[@]}"
 	do
