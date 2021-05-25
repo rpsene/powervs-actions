@@ -95,6 +95,18 @@ function get_all_services() {
 	done
 }
 
+function get_all_services_crn() {
+
+	VAR=($(ibmcloud pi service-list --json | jq -r '.[] | "\(.CRN),\(.Name)"'))
+
+	for i in "${VAR[@]}"
+	do
+		CRN=$(echo $i | awk -F ',' '{print $1}')
+		echo "$CRN" >> /tmp/all-crn
+		mv /tmp/all-crn $(pwd)/crns
+	done
+}
+
 function get_all_images() {
 	ibm cloud pi images
 }
@@ -724,7 +736,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -740,6 +752,10 @@ function run() {
                 echo "Enter the API KEY, followed by [ENTER]:"
                 read -s API_KEY
                 authenticate $API_KEY
+                break
+                ;;
+	    "Get all CRNs")
+	    	get_all_services_crn
                 break
                 ;;
             "Get PowerVS Services CRN and GUID")
