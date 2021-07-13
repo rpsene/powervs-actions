@@ -123,6 +123,27 @@ function get_all_images() {
 	ibm cloud pi images
 }
 
+function get_images_age(){
+
+	IMAGES=($(ibmcloud pi images --json | jq -r ".[] | .images" | jq -r '.[] | "\(.name),\(.imageID),\(.creationDate),\(.specifications.operatingSystem),\(.storageType)"'))
+
+	for line in "${IMAGES[@]}"; do
+
+		IMAGE_NAME=$(echo "$line" | awk -F ',' '{print $1}')
+		IMAGE_ID=$(echo "$line" | awk -F ',' '{print $2}')
+		OS=$(echo "$line" | awk -F ',' '{print $4}')
+		STORAGE_TYPE=$(echo "$line" | awk -F ',' '{print $5}')
+        	VM_CREATION_DATE=$(echo "$line" | awk -F ',' '{print $3}')
+
+        	Y=$(echo "$VM_CREATION_DATE" | awk -F '-' '{print $1}')
+        	M=$(echo "$VM_CREATION_DATE" | awk -F '-' '{print $2}' | sed 's/^0*//')
+        	D=$(echo "$VM_CREATION_DATE" | awk -F '-' '{print $3}' | awk -F 'T' '{print $1}' | sed 's/^0*//')
+        	AGE=$(python3 -c "from datetime import date as d; print(d.today() - d($Y, $M, $D))" | awk -F ',' '{print $1}')
+
+		echo "$IMAGE_NAME,$IMAGE_ID,$OS,$STORAGE_TYPE,$AGE"
+	done
+}
+
 function get_all_volumes() {
 	ibm cloud pi volumes
 }
@@ -748,7 +769,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -814,6 +835,10 @@ function run() {
                 ;;
             "Get Images")
                 get_images
+                break
+                ;;
+	    "Get Images Age")
+                get_images_age
                 break
                 ;;
             "Create Boot Image")
