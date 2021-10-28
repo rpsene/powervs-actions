@@ -32,7 +32,7 @@ function check_dependencies() {
     do
         if ! command -v $i &> /dev/null; then
             echo "$i could not be found, exiting!"
-            exit
+            exit 1
         fi
     done
 }
@@ -50,7 +50,7 @@ function install_ibmcloud() {
 
     if command -v "ibmcloud" &> /dev/null; then
         echo "ibmcloud is already installed!"
-        exit
+        exit 0
     fi
 
     local OS="$(uname -s)"
@@ -72,7 +72,7 @@ function install_ibmcloud() {
         echo "Installing ibmcloud CLI on Mac..."
         curl -fsSL https://clis.cloud.ibm.com/install/osx | sh
 	ibmcloud plugin install power-iaas
-    fi    
+    fi
 }
 
 function get_all_services() {
@@ -98,25 +98,23 @@ function get_all_services() {
 function get_all_services_crn() {
 
 	VAR=($(ibmcloud pi service-list --json | jq -r '.[] | "\(.CRN),\(.Name)"'))
-	rm -f $(pwd)/crns
-	for i in "${VAR[@]}"
-	do
-		CRN=$(echo $i | awk -F ',' '{print $1}')
+	rm -f "$(pwd)"/crns
+	for i in "${VAR[@]}"; do
+		CRN=$(echo "$i" | awk -F ',' '{print $1}')
 		echo "$CRN" >> /tmp/all-crn
 	done
-	mv /tmp/all-crn $(pwd)/crns
+	mv /tmp/all-crn "$(pwd)"/crns
 }
 
 function get_all_vms_ips() {
 
 	get_all_services_crn
-	IFS=$'\n' read -d '' -r -a crn < $(pwd)/crns
-	for i in "${crn[@]}"
-	do
+	IFS=$'\n' read -d '' -r -a crn < "$(pwd)"/crns
+	for i in "${crn[@]}"; do
 		CRN=$(echo $i | awk -F ',' '{print $1}')
 		set_powervs "$CRN"
 		get_instances_ips
-	done	
+	done
 }
 
 function get_all_images() {
@@ -149,23 +147,21 @@ function get_all_volumes() {
 }
 
 function authenticate() {
-    
+
     local APY_KEY="$1"
-    
     if [ -z "$APY_KEY" ]; then
         echo "API KEY was not set."
-        exit
+        exit 1
     fi
-    ibmcloud login --no-region --apikey $APY_KEY
+    ibmcloud login --no-region --apikey "$APY_KEY"
 }
 
 function set_powervs() {
-    
+
     local CRN="$1"
-    
     if [ -z "$CRN" ]; then
         echo "CRN was not set."
-        exit
+        exit 1
     fi
     ibmcloud pi st "$CRN"
 }
@@ -223,12 +219,12 @@ function get_private_networks(){
 	ibmcloud pi networks --long --json | \
 	jq '.[] | "\(.type),\(.name),\(.networkID)"' | tr -d "\"" \
 	>> /tmp/powervs-private-network
-	
+
 	while read line; do
 		local TYPE=$(echo "$line" | awk -F ',' '{print $1}')
 		local NAME=$(echo "$line" | awk -F ',' '{print $2}')
 		local ID=$(echo "$line" | awk -F ',' '{print $3}')
-		
+
 		if [ $TYPE = "vlan" ]; then
 			echo "---"
 			echo "Private Network Name: $NAME"
@@ -279,7 +275,7 @@ function get_all_instances_console_url() {
         if [ -z "$VM_ID" ]; then
             echo "VM_ID was not set."
             echo "VM_ID: the unique identifier or name of the VM."
-            exit
+            exit 1
         fi
         ibmcloud pi instance-get-console --json $VM_ID | jq -r '.consoleURL'
     done < "$FPARSED"
@@ -303,7 +299,7 @@ function open_all_instances_console_url() {
         if [ -z "$VM_ID" ]; then
             echo "VM_ID was not set."
             echo "VM_ID: the unique identifier or name of the VM."
-            exit
+            exit 1
         fi
         ibmcloud pi instance-get-console --json $VM_ID | jq -r '.consoleURL' >> $URL_LOG
     done < "$FPARSED"
@@ -329,9 +325,9 @@ function delete_all_instances() {
         if [ -z "$VM_ID" ]; then
             echo "VM_ID was not set."
             echo "VM_ID: the unique identifier or name of the VM."
-            exit
+            exit 1
         fi
-        ibmcloud pi instance-delete $VM_ID
+        ibmcloud pi instance-delete "$VM_ID"
     done < "$FPARSED"
 }
 
@@ -346,11 +342,11 @@ function add_ssh_key() {
 
     if [ -z "$KEY_NAME" ]; then
         echo "KEY_NAME was not set."
-        exit
+        exit 1
     fi
     if [ -z "$KEY" ]; then
         echo "KEY was not set."
-        exit
+        exit 1
     fi
     ibmcloud pi key-create "$KEY_NAME" --key "$KEY"
 }
@@ -361,7 +357,7 @@ function rm_ssh_key() {
 
     if [ -z "$KEY_NAME" ]; then
         echo "KEY_NAME was not set."
-        exit
+        exit 1
     fi
     ibmcloud pi key-delete "$KEY_NAME"
 }
@@ -382,7 +378,7 @@ function delete_unused_volumes() {
         VMS_ATTACHED=$(echo "$line" | awk -F ',' '{print $2}' | tr -d "\" \[ \]")
         if [ -z "$VMS_ATTACHED" ]; then
             echo "No VMs attached, deleting ..."
-	    ibmcloud pi volume-delete $VOLUME
+	    ibmcloud pi volume-delete "$VOLUME"
         fi
     done < "$JSON"
 }
@@ -398,9 +394,9 @@ function delete_image() {
     if [ -z "$IMAGE_ID" ]; then
         echo "IMAGE_ID was not set."
         echo "IMAGE_ID: the unique identifier or name of the image."
-        exit
+        exit 1
     fi
-    ibmcloud pi image-delete $IMAGE_ID
+    ibmcloud pi image-delete "$IMAGE_ID"
 }
 
 function delete_vm() {
@@ -410,9 +406,9 @@ function delete_vm() {
     if [ -z "$VM_ID" ]; then
         echo "VM_ID was not set."
         echo "VM_ID: the unique identifier or name of the VM."
-        exit
+        exit 1
     fi
-    ibmcloud pi instance-delete $VM_ID
+    ibmcloud pi instance-delete "$VM_ID"
 }
 
 function inspect_vm() {
@@ -422,9 +418,9 @@ function inspect_vm() {
     if [ -z "$VM_ID" ]; then
         echo "VM_ID was not set."
         echo "VM_ID: the unique identifier or name of the VM."
-        exit
+        exit 1
     fi
-    ibmcloud pi in $VM_ID
+    ibmcloud pi in "$VM_ID"
 }
 
 function get_storage_types() {
@@ -439,9 +435,9 @@ function create_public_network() {
 
     if [ -z "$NETWORK_NAME" ]; then
         echo "NETWORK_NAME was not set."
-        exit
+        exit 1
     fi
-    ibmcloud pi netcpu --dns-servers "$DNS" $NETWORK_NAME
+    ibmcloud pi netcpu --dns-servers "$DNS" "$NETWORK_NAME"
 }
 
 function create_private_network() {
@@ -453,7 +449,7 @@ function create_private_network() {
 
     if [ -z "$NETWORK_NAME" ]; then
         echo "NETWORK_NAME was not set."
-        exit
+        exit 1
     fi
     ibmcloud pi netcpr --dns-servers "$DNS" --cidr-block "$CIDR" --ip-range "$IP_RANGE" "$NETWORK_NAME"
 }
@@ -465,9 +461,9 @@ function delete_network() {
     if [ -z "$NETWORK_ID" ]; then
         echo "NETWORK_ID was not set."
         echo "NETWORK_ID: the unique identifier or name of the network."
-        exit
+        exit 1
     fi
-    ibmcloud pi network-delete $NETWORK_ID
+    ibmcloud pi network-delete "$NETWORK_ID"
 }
 
 function network_info() {
@@ -477,9 +473,9 @@ function network_info() {
     if [ -z "$NETWORK_ID" ]; then
         echo "NETWORK_ID was not set."
         echo "NETWORK_ID: the unique identifier or name of the network."
-        exit
+        exit 1
     fi
-    ibmcloud pi network $NETWORK_ID
+    ibmcloud pi network "$NETWORK_ID"
 }
 
 function create_storage() {
@@ -490,18 +486,18 @@ function create_storage() {
 
     if [ -z "$VOLUME_NAME" ]; then
         echo "VOLUME_NAME was not set."
-        exit
+        exit 1
     fi
 
     if [ -z "$VOLUME_SIZE" ]; then
         echo "VOLUME_SIZE was not set."
-        exit
+        exit 1
     fi
 
     if [ -z "$VOLUME_TIER" ]; then
         echo "VOLUME_TIER was not set."
         echo "set 1 for nvme or 3 for ssd".
-        exit
+        exit 1
     fi
 
     ibmcloud pi volume-create "$VOLUME_NAME" --type "$VOLUME_TIER" --size "$VOLUME_SIZE"
@@ -516,18 +512,18 @@ function create_multiple_storage() {
 
     if [ -z "$VOLUME_NAME" ]; then
         echo "VOLUME_NAME was not set."
-        exit
+        exit 1
     fi
 
     if [ -z "$VOLUME_SIZE" ]; then
         echo "VOLUME_SIZE was not set."
-        exit
+        exit 1
     fi
 
     if [ -z "$VOLUME_TIER" ]; then
         echo "VOLUME_TIER was not set."
         echo "set 1 for nvme or 3 for ssd".
-        exit
+        exit 1
     fi
 
     for i in $(seq 1 $VOLUME_AMOUNT); do
@@ -547,34 +543,50 @@ function create_multiple_storage_with_affinity() {
 
     if [ -z "$VOLUME_NAME" ]; then
         echo "VOLUME_NAME was not set."
-        exit
+        exit 1
     fi
 
     if [ -z "$VOLUME_SIZE" ]; then
         echo "VOLUME_SIZE was not set."
-        exit
-    fi
-    
-    if [ -z "$VOLUME_SIZE" ]; then
-        echo "VOLUME_SIZE was not set."
-        exit
+        exit 1
     fi
 
     if [ -z "$VOLUME_TIER" ]; then
         echo "VOLUME_TIER was not set."
         echo "set tier1 for nvme or tier3 for ssd."
-        exit
+        exit 1
     fi
-    
+
     if [ -z "$VOLUME_AFFINITY_ID" ]; then
         echo "VOLUME_AFFINITY_ID was not set."
         echo "The ID of the storage for affinity was not set."
-        exit
+        exit 1
     fi
 
     for i in $(seq 1 $VOLUME_AMOUNT); do
         SUFIX=$(openssl rand -hex 5)
-	ibmcloud pi volume-create "$VOLUME_NAME""-""$SUFIX" --type "$VOLUME_TIER" --size "$VOLUME_SIZE" --affinity-policy affinity --affinity-volume "$VOLUME_AFFINITY_ID"
+	    ibmcloud pi volume-create "$VOLUME_NAME""-""$SUFIX" --type "$VOLUME_TIER" --size "$VOLUME_SIZE" --affinity-policy affinity --affinity-volume "$VOLUME_AFFINITY_ID"
+    done
+}
+
+function allocate_volumes_to_vm() {
+
+    TARGET_VM_ID="$1"
+
+    if [ -z "$TARGET_VM_ID" ]; then
+        echo "TARGET_VM_ID was not set."
+        echo "The ID of the VM to attach the volumes was not set."
+        exit 1
+    fi
+
+    IFS=' ' read -r -a VOLUMES <<< "$2"
+    if [ ${#VOLUMES[@]} -eq 0 ]; then
+        echo "The list of volumes to attach to a VM is empty."
+        exit 1
+    fi
+
+    for V in "${VOLUMES[@]}"; do
+        ibmcloud pi volume-attach "$V" --instance "$TARGET_VM_ID"
     done
 }
 
@@ -585,9 +597,9 @@ function delete_storage() {
     if [ -z "$VOLUME_ID" ]; then
         echo "VOLUME_ID was not set."
         echo "VOLUME_ID: the unique identifier or name of the volume."
-        exit
+        exit 1
     fi
-    ibmcloud pi volume-delete $VOLUME_ID
+    ibmcloud pi volume-delete "$VOLUME_ID"
 }
 
 function storage_info() {
@@ -597,9 +609,9 @@ function storage_info() {
     if [ -z "$VOLUME_ID" ]; then
         echo "VOLUME_ID was not set."
         echo "VOLUME_ID: the unique identifier or name of the volume."
-        exit
+        exit 1
     fi
-    ibmcloud pi volume $VOLUME_ID
+    ibmcloud pi volume "$VOLUME_ID"
 }
 
 function create_boot_image() {
@@ -614,32 +626,32 @@ function create_boot_image() {
     if [ -z "$IMAGE_NAME" ]; then
         echo "IMAGE_NAME was not set."
         echo "IMAGE_NAME: the unique identifier or name of the new boot image."
-        exit
+        exit 1
     fi
     if [ -z "$IMAGE_COB_LOC" ]; then
         echo "IMAGE_COB_LOC was not set."
         echo "IMAGE_COB_LOC: the location of the object storage where the object data is located, for instance us-south."
-        exit
+        exit 1
     fi
     if [ -z "$IMAGE_COB_BUCKET_NAME" ]; then
         echo "IMAGE_COB_BUCKET_NAME was not set."
         echo "IMAGE_COB_BUCKET_NAME: the name of the bucket where the object is stored."
-        exit
+        exit 1
     fi
     if [ -z "$IMAGE_COB_OBJECT_NAME" ]; then
         echo "IMAGE_COB_OBJECT_NAME was not set."
         echo "IMAGE_COB_OBJECT_NAME: the name of the object within the given object storage."
-        exit
+        exit 1
     fi
     if [ -z "$ACCESS_KEY" ]; then
         echo "ACCESS_KEY was not set."
         echo "ACCESS_KEY: the cloud object storage HMAC access key."
-        exit
+        exit 1
     fi
     if [ -z "$SECRET_KEY" ]; then
         echo "SECRET_KEY was not set."
         echo "SECRET_KEY: the cloud object storage HMAC secret key."
-        exit
+        exit 1
     fi
 
     ibmcloud pi image-import "$IMAGE_NAME" \
@@ -665,49 +677,49 @@ function create_vm() {
     if [ -z "$VM_NAME" ]; then
         echo "VM_NAME was not set."
         echo "Give your VM a friendly name."
-        exit
+        exit 1
     fi
     if [ -z "$VM_IMAGE" ]; then
         echo "VM_IMAGE was not set."
         echo "Operating system image identifier or name."
-        exit
+        exit 1
     fi
     if [ -z "$VM_MEM" ]; then
         echo "VM_MEM was not set."
         echo "Amount of memory (in GB) to allocate to the instance."
-        exit
+        exit 1
     fi
     if [ -z "$VM_PROC" ]; then
         echo "VM_PROC was not set."
         echo "Amount of processors to allocate to the instance."
-        exit
+        exit 1
     fi
     if [ -z "$VM_PROC_TYPE" ]; then
         echo "VM_PROC_TYPE was not set."
         echo "Type of processors: shared (\$) or capped (\$\$) or dedicated (\$\$\$)".
-        exit
+        exit 1
     fi
     if [ -z "$VM_NETWORK_NAME" ]; then
         echo "VM_NETWORK_NAME was not set."
         echo "Space separated identifier/name of the network and optional IP address to associate with the instance."
-        exit
+        exit 1
     fi
     if [ -z "$VM_SSH_KEY_NAME" ]; then
         echo "VM_SSH_KEY_NAME was not set."
         echo "Name of SSH key."
-        exit
+        exit 1
     fi
     if [ -z "$VM_SYS_TYPE" ]; then
         echo "VM_SYS_TYPE was not set."
         echo "Name of System Type (s922, e880, e980)."
-        exit
+        exit 1
     fi
 
     systems=(s922 e880 e980)
     #Validate the system type
     if [[ ! " ${systems[@]} " =~ " ${VM_SYS_TYPE} " ]]; then
         echo "Available systems type: s922 or e880 or e980."
-        exit
+        exit 1
     fi
 
     CMD="ibmcloud pi instance-create $VM_NAME --image $VM_IMAGE --memory $VM_MEM --processors $VM_PROC --processor-type $VM_PROC_TYPE --network $VM_NETWORK_NAME --key-name $VM_SSH_KEY_NAME --sys-type $VM_SYS_TYPE --replicants $VM_REPLICANTS --replicant-scheme $VM_REPLICANT_SCHEME --replicant-affinity-policy $VM_REPLICANT_AFFINITY_POLICY"
@@ -720,13 +732,13 @@ function create_vm() {
         for volume in "${USER_SET_VOLUMES[@]}"; do
             if [[ ! " ${VOLUMES[@]} " =~ " $volume " ]]; then
                 echo "Looks like the volume $volume does not exist."
-                exit
+                exit 1
             fi
         done
         CMD="$CMD --volumes $VM_ADITIONAL_VOLUMES"
     fi
 
-    eval $CMD
+    eval "$CMD"
 }
 
 function identify_os() {
@@ -762,7 +774,7 @@ function install_pvsadmin() {
 
     if command -v "pvsadm" &> /dev/null; then
         echo "pvsadm is already installed!"
-        exit
+        exit 0
     fi
 
     wget -q -O /usr/local/bin/pvsadm "https://github.com/ppc64le-cloud/pvsadm/releases/download/$PVSADM_VERSION/pvsadm-$DISTRO-$ARCH"
@@ -811,7 +823,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Create Multiple Volumes with Affinity" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volumes" "Create Multiple Volumes with Affinity" "Allocate Volumes to VM" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -825,12 +837,12 @@ function run() {
                 ;;
             "Connect to IBM Cloud")
                 echo "Enter the API KEY, followed by [ENTER]:"
-                read -s API_KEY
-                authenticate $API_KEY
+                read -rs API_KEY
+                authenticate "$API_KEY"
                 break
                 ;;
-	    "Get all CRNs")
-	    	get_all_services_crn
+	        "Get all CRNs")
+	    	    get_all_services_crn
                 break
                 ;;
             "Get PowerVS Services CRN and GUID")
@@ -843,8 +855,8 @@ function run() {
                 ;;
             "Set Active PowerVS")
                 echo "Enter the CRN, followed by [ENTER]:"
-                read CRN
-                set_powervs $CRN
+                read -r CRN
+                set_powervs "$CRN"
                 break
                 ;;
             "Get Instances")
@@ -853,13 +865,13 @@ function run() {
                 ;;
             "Inspect Instance")
                 echo "Enter the image ID, followed by [ENTER]:"
-                read IMAGE_ID
+                read -r IMAGE_ID
                 inspect_vm "$IMAGE_ID"
                 break
                 ;;
             "Delete Instance")
                 echo "Enter the instance ID, followed by [ENTER]:"
-                read VM_ID
+                read -r VM_ID
                 delete_vm "$VM_ID"
                 break
                 ;;
@@ -879,30 +891,29 @@ function run() {
                 get_images
                 break
                 ;;
-	    "Get Images Age")
+	        "Get Images Age")
                 get_images_age
                 break
                 ;;
             "Create Boot Image")
                 echo "Enter the name of the new boot image, followed by [ENTER]:"
-                read IMAGE_NAME
+                read -r IMAGE_NAME
                 echo "Enter the location of the object storage where the object data is located, followed by [ENTER]:"
-                read IMAGE_COB_LOC
+                read -r IMAGE_COB_LOC
                 echo "Enter the name of the bucket where the object is stored, followed by [ENTER]:"
-                read IMAGE_COB_BUCKET_NAME
+                read -r IMAGE_COB_BUCKET_NAME
                 echo "Enter the the name of the object within the given object storage, followed by [ENTER]:"
-                read IMAGE_COB_OBJECT_NAME
+                read -r IMAGE_COB_OBJECT_NAME
                 echo "Enter the cloud object storage HMAC access key, followed by [ENTER]:"
-                read -s ACCESS_KEY
+                read -rs ACCESS_KEY
                 echo "Enter the cloud object storage HMAC secret key, followed by [ENTER]:"
-                read -s SECRET_KEY
-
+                read -rs SECRET_KEY
                 create_boot_image "$IMAGE_NAME" "$IMAGE_COB_LOC" "$IMAGE_COB_BUCKET_NAME" "$IMAGE_COB_OBJECT_NAME" "$ACCESS_KEY" "$SECRET_KEY"
                 break
                 ;;
             "Delete Image")
                 echo "Enter the image ID, followed by [ENTER]:"
-                read IMAGE_ID
+                read -r IMAGE_ID
                 delete_image "$IMAGE_ID"
                 break
                 ;;
@@ -919,9 +930,9 @@ function run() {
                 break
                 ;;
             "Get All VMs IPs")
-	    	get_all_vms_ips
-		break
-		;;
+	    	    get_all_vms_ips
+		        break
+		        ;;
             "Get Volumes")
                 get_volumes
                 break
@@ -932,15 +943,15 @@ function run() {
                 ;;
             "Add New SSH Key")
                 echo "Enter the new SSH Key name, followed by [ENTER]:"
-                read KEY_NAME
+                read -r KEY_NAME
                 echo "Enter the new SSH Key, followed by [ENTER]:"
-                read KEY
+                read -r KEY
                 add_ssh_key "$KEY_NAME" "$KEY"
                 break
                 ;;
             "Remove SSH Key")
                 echo "Enter the new SSH Key name, followed by [ENTER]:"
-                read KEY_NAME
+                read -r KEY_NAME
                 rm_ssh_key "$KEY_NAME"
                 break
                 ;;
@@ -950,79 +961,91 @@ function run() {
                 ;;
             "Create Public Network")
                 echo "Enter the new network name, followed by [ENTER]:"
-                read NETWORK_NAME
+                read -r NETWORK_NAME
                 create_public_network "$NETWORK_NAME"
                 break
                 ;;
             "Create Private Network")
                 echo "Enter the new network name, followed by [ENTER]:"
-                read NETWORK_NAME
+                read -r NETWORK_NAME
                 create_private_network "$NETWORK_NAME"
                 break
                 ;;
             "Delete Network")
                 echo "Enter the network ID, followed by [ENTER]:"
-                read NETWORK_ID
+                read -r NETWORK_ID
                 delete_network "$NETWORK_ID"
                 break
                 ;;
             "Show Network")
                 echo "Enter the network ID, followed by [ENTER]:"
-                read NETWORK_ID
+                read -r NETWORK_ID
                 network_info "$NETWORK_ID"
                 break
                 ;;
             "Create Volume")
                 echo "Enter the new volume name, followed by [ENTER]:"
-                read VOLUME_NAME
-                
+                read -r VOLUME_NAME
+
                 echo "Enter the new volume size (G), followed by [ENTER]:"
-                read VOLUME_SIZE
+                read -r VOLUME_SIZE
 
                 echo "Enter the new volume tier (you can check what is available using the option \"Get Volume Types\"), followed by[ENTER]:"
-                read VOLUME_TIER
+                read -r VOLUME_TIER
 
                 create_storage "$VOLUME_NAME" "$VOLUME_SIZE" "$VOLUME_TIER"
                 break
                 ;;
-            "Create Multiple Volume")
+            "Create Multiple Volumes")
                 echo "Enter the new volume name, followed by [ENTER]:"
-                read VOLUME_NAME
-                
+                read -r VOLUME_NAME
+
                 echo "Enter the new volume size (G), followed by [ENTER]:"
-                read VOLUME_SIZE
+                read -r VOLUME_SIZE
 
                 echo "Enter the new volume tier (tier1 or tier3), followed by[ENTER]:"
-                read VOLUME_TIER
+                read -r VOLUME_TIER
 
                 echo "Enter the amount of volumes, followed by[ENTER]:"
-                read VOLUME_AMOUNT
+                read -r VOLUME_AMOUNT
 
                 create_multiple_storage "$VOLUME_NAME" "$VOLUME_SIZE" "$VOLUME_TIER" "$VOLUME_AMOUNT"
                 break
                 ;;
-            "Create Multiple Volume with Affinity")
+            "Create Multiple Volumes with Affinity")
                 echo "Enter the new volume name, followed by [ENTER]:"
-                read VOLUME_NAME
-                
+                read -r VOLUME_NAME
+
                 echo "Enter the new volume size (G), followed by [ENTER]:"
-                read VOLUME_SIZE
+                read -r VOLUME_SIZE
 
                 echo "Enter the new volume tier (tier1 or tier3), followed by[ENTER]:"
-                read VOLUME_TIER
+                read -r VOLUME_TIER
 
                 echo "Enter the amount of volumes, followed by[ENTER]:"
-                read VOLUME_AMOUNT
-		
-		echo "Enter the ID of the storage to be used for affinity, followed by[ENTER]:"
-                read VOLUME_ID
+                read -r VOLUME_AMOUNT
+
+		        echo "Enter the ID of the storage to be used for affinity, followed by[ENTER]:"
+                read -r VOLUME_ID
 
                 create_multiple_storage_with_affinity "$VOLUME_NAME" "$VOLUME_SIZE" "$VOLUME_TIER" "$VOLUME_AMOUNT" "$VOLUME_ID"
                 break
                 ;;
+
+            "Allocate Volumes to VM")
+
+                echo "Enter the target VM ID, followed by [ENTER]:"
+                read -r TARGET_VM_ID
+
+                echo "Enter the ID of volumes you want to attach separated by space, followed by [ENTER]:"
+                read -r VOLUMES
+
+                allocate_volumes_to_vm  "$TARGET_VM_ID" "$VOLUMES"
+                break
+                ;;
             "Delete Volume")
                 echo "Enter the volume ID, followed by [ENTER]:"
-                read VOLUME_ID
+                read -r VOLUME_ID
                 delete_storage "$VOLUME_ID"
                 break
                 ;;
@@ -1032,41 +1055,41 @@ function run() {
                 ;;
             "Show Volume")
                 echo "Enter the volume ID, followed by [ENTER]:"
-                read VOLUME_ID
+                read -r VOLUME_ID
                 storage_info "$VOLUME_ID"
                 break
                 ;;
             "Create Virtual Machine")
                 echo "Enter the name of the new VM, followed by [ENTER]:"
-                read VM_NAME
+                read -r VM_NAME
 
                 echo "Enter the name of the image to be used to create the VM (use the option 7 to get it), followed by [ENTER]:"
-                read VM_IMAGE
+                read -r VM_IMAGE
 
                 echo "Enter the amount of memory (G) for the VM, followed by [ENTER]:"
-                read VM_MEM
+                read -r VM_MEM
 
                 echo "Enter the amount of processors for the new VM, followed by [ENTER]:"
-                read VM_PROC
+                read -r VM_PROC
 
                 echo "Enter the type of system to run the new VM (s922, e880, e980), followed by [ENTER]:"
-                read VM_SYS_TYPE
+                read -r VM_SYS_TYPE
 
                 echo "Enter the name of SSH key to be added in the new VM (use option 9 to get it), followed by [ENTER]:"
-                read VM_SSH_KEY_NAME
+                read -r VM_SSH_KEY_NAME
 
                 echo "Enter the name of the network to add to the new VM (use item 13 to create a new one or 12 to get the name of an existing one), followed by [ENTER]:"
-                read VM_NETWORK_NAME
+                read -r VM_NETWORK_NAME
 
                 echo "Enter the list of additional volumes (separated by spaces), to attach to the new VM (use option 16 to list existing volumes or use option 18 to create a new one), followed by [ENTER]:"
-                read VM_ADITIONAL_VOLUMES
+                read -r VM_ADITIONAL_VOLUMES
 
                 create_vm "$VM_NAME" "$VM_IMAGE" "$VM_MEM" "$VM_PROC" "$VM_SYS_TYPE" "$VM_SSH_KEY_NAME" "$VM_NETWORK_NAME" "$VM_ADITIONAL_VOLUMES"
                 break
                 ;;
             "Install PowerVS Admin Tool")
-	    	identify_os
-		install_pvsadm_dependencies
+	    	    identify_os
+		        install_pvsadm_dependencies
                 install_pvsadmin
                 break
                 ;;
