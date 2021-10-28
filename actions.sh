@@ -1020,7 +1020,6 @@ function run() {
                 create_multiple_storage_with_affinity "$VOLUME_NAME" "$VOLUME_SIZE" "$VOLUME_TIER" "$VOLUME_AMOUNT" "$VOLUME_ID"
                 break
                 ;;
-		
             "Delete Volume")
                 echo "Enter the volume ID, followed by [ENTER]:"
                 read VOLUME_ID
