@@ -536,6 +536,48 @@ function create_multiple_storage() {
     done
 }
 
+
+function create_multiple_storage_with_affinity() {
+
+    VOLUME_NAME="$1"
+    VOLUME_SIZE="$2"
+    VOLUME_TIER="$3"
+    VOLUME_AMOUNT="$4"
+    VOLUME_AFFINITY_ID="$5"
+
+    if [ -z "$VOLUME_NAME" ]; then
+        echo "VOLUME_NAME was not set."
+        exit
+    fi
+
+    if [ -z "$VOLUME_SIZE" ]; then
+        echo "VOLUME_SIZE was not set."
+        exit
+    fi
+    
+    if [ -z "$VOLUME_SIZE" ]; then
+        echo "VOLUME_SIZE was not set."
+        exit
+    fi
+
+    if [ -z "$VOLUME_TIER" ]; then
+        echo "VOLUME_TIER was not set."
+        echo "set tier1 for nvme or tier3 for ssd."
+        exit
+    fi
+    
+    if [ -z "$VOLUME_AFFINITY_ID" ]; then
+        echo "VOLUME_AFFINITY_ID was not set."
+        echo "The ID of the storage for affinity was not set."
+        exit
+    fi
+
+    for i in $(seq 1 $VOLUME_AMOUNT); do
+        SUFIX=$(openssl rand -hex 5)
+	ibmcloud pi volume-create "$VOLUME_NAME""-""$SUFIX" --type "$VOLUME_TIER" --size "$VOLUME_SIZE" --affinity-policy affinity --affinity-volume "$VOLUME_AFFINITY_ID"
+    done
+}
+
 function delete_storage() {
 
     local VOLUME_ID="$1"
@@ -769,7 +811,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volume" "Create Multiple Volumes with Affinity" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -959,6 +1001,26 @@ function run() {
                 create_multiple_storage "$VOLUME_NAME" "$VOLUME_SIZE" "$VOLUME_TIER" "$VOLUME_AMOUNT"
                 break
                 ;;
+            "Create Multiple Volume with Affinity")
+                echo "Enter the new volume name, followed by [ENTER]:"
+                read VOLUME_NAME
+                
+                echo "Enter the new volume size (G), followed by [ENTER]:"
+                read VOLUME_SIZE
+
+                echo "Enter the new volume tier (tier1 or tier3), followed by[ENTER]:"
+                read VOLUME_TIER
+
+                echo "Enter the amount of volumes, followed by[ENTER]:"
+                read VOLUME_AMOUNT
+		
+		echo "Enter the ID of the storage to be used for affinity, followed by[ENTER]:"
+                read VOLUME_ID
+
+                create_multiple_storage_with_affinity "$VOLUME_NAME" "$VOLUME_SIZE" "$VOLUME_TIER" "$VOLUME_AMOUNT" "$VOLUME_ID"
+                break
+                ;;
+		
             "Delete Volume")
                 echo "Enter the volume ID, followed by [ENTER]:"
                 read VOLUME_ID
