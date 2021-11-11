@@ -454,6 +454,21 @@ function create_private_network() {
     ibmcloud pi netcpr --dns-servers "$DNS" --cidr-block "$CIDR" --ip-range "$IP_RANGE" "$NETWORK_NAME"
 }
 
+
+function create_custom_private_network() {
+
+    local NETWORK_NAME="$1"
+    local DNS="1.1.1.1 9.9.9.9 8.8.8.8"
+    local CIDR="$2"
+    local IP_RANGE="$3"
+
+    if [ -z "$NETWORK_NAME" ]; then
+        echo "NETWORK_NAME was not set."
+        exit 1
+    fi
+    ibmcloud pi netcpr --dns-servers "$DNS" --cidr-block "$CIDR" --ip-range "$IP_RANGE" "$NETWORK_NAME"
+}
+
 function delete_network() {
 
     local NETWORK_ID="$1"
@@ -823,7 +838,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volumes" "Create Multiple Volumes with Affinity" "Allocate Volumes to VM" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Create Custom Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volumes" "Create Multiple Volumes with Affinity" "Allocate Volumes to VM" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -969,6 +984,16 @@ function run() {
                 echo "Enter the new network name, followed by [ENTER]:"
                 read -r NETWORK_NAME
                 create_private_network "$NETWORK_NAME"
+                break
+                ;;
+            "Create Custom Private Network")
+                echo "Enter the new network name, followed by [ENTER]:"
+                read -r NETWORK_NAME
+		echo "Enter the new network CIDR (e.g 192.168.0.0/24), followed by [ENTER]:"
+                read -r NETWORK_CIDR
+		echo "Enter the new network ip range (e.g 192.168.0.2-192.168.0.253), followed by [ENTER]:"
+                read -r NETWORK_RANGE
+                create_custom_private_network "$NETWORK_NAME" "$NETWORK_CIDR" "$NETWORK_RANGE"
                 break
                 ;;
             "Delete Network")
