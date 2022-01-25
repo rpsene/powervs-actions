@@ -65,13 +65,13 @@ function install_ibmcloud() {
     if [ $distro == "Linux" ]; then
         echo "Installing ibmcloud CLI on Linux..."
         curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
-        ibmcloud plugin install power-iaas
+        ibmcloud plugin install --all -f
     fi
 
     if [ $distro == "Mac" ]; then
         echo "Installing ibmcloud CLI on Mac..."
         curl -fsSL https://clis.cloud.ibm.com/install/osx | sh
-	ibmcloud plugin install power-iaas
+	ibmcloud plugin install --all -f
     fi
 }
 
