@@ -602,7 +602,7 @@ function create_multiple_storage_with_affinity() {
 
     for i in $(seq 1 $VOLUME_AMOUNT); do
         SUFIX=$(openssl rand -hex 5)
-	    ibmcloud pi volume-create "$VOLUME_NAME""-""$SUFIX" --type "$VOLUME_TIER" --size "$VOLUME_SIZE" --affinity-policy affinity --affinity-volume "$VOLUME_AFFINITY_ID"
+	    ibmcloud pi volume-create "$VOLUME_NAME""-""$SUFIX" --size "$VOLUME_SIZE" --affinity-policy affinity --affinity-volume "$VOLUME_AFFINITY_ID"
     done
 }
 
