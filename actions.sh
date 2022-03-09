@@ -331,6 +331,28 @@ function delete_all_instances() {
     done < "$FPARSED"
 }
 
+function reboot_all_instances() {
+
+    local JSON=/tmp/powervs-instances.json
+    local FPARSED=/tmp/powervs-id-name.log
+
+    > $JSON
+    > $FPARSED
+
+    ibmcloud pi instances --json >> $JSON
+
+    cat $JSON | jq -r '.Payload.pvmInstances[] | "\(.pvmInstanceID),\(.serverName),\(.networks[].ip),\(.status),\(.sysType)"' >> $FPARSED
+    while IFS= read -r line; do
+        VM_ID=$(echo "$line" | awk -F ',' '{print $1}')
+        if [ -z "$VM_ID" ]; then
+            echo "VM_ID was not set."
+            echo "VM_ID: the unique identifier or name of the VM."
+            exit 1
+        fi
+        ibmcloud pi instance-soft-reboot "$VM_ID"
+    done < "$FPARSED"
+}
+
 function get_keys() {
 	ibmcloud pi keys
 }
@@ -838,7 +860,7 @@ function install_pvsadm_dependencies() {
 
 function run() {
     PS3='Please enter your choice: '
-    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Create Custom Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volumes" "Create Multiple Volumes with Affinity" "Allocate Volumes to VM" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
+    options=( "Check Script Dependencies" "Install IBM Cloud CLI" "Connect to IBM Cloud" "Get all CRNs" "Get PowerVS Services CRN and GUID" "Get PowerVS Instances Details" "Set Active PowerVS" "Get Instances" "Inspect Instance" "Delete Instance" "Delete All Instances" "Reboot All Instances" "Get All Instances Console URL" "Open All Instances Console URL" "Get Images" "Get Images Age" "Delete Image" "Create Boot Image" "Get SSH Keys" "Add New SSH Key" "Remove SSH Key" "Get Networks" "Get Private Networks" "Get VMs IPs" "Get All VMs IPs" "Create Public Network" "Create Private Network" "Create Custom Private Network" "Delete Network" "Show Network" "Get Volumes" "Get Volume Types" "Create Volume" "Create Multiple Volumes" "Create Multiple Volumes with Affinity" "Allocate Volumes to VM" "Delete Volume" "Delete All Unused Volumes" "Show Volume" "Create Virtual Machine" "Install PowerVS Admin Tool" "Get Users" "Quit")
     select opt in "${options[@]}"
     do
         case $opt in
@@ -892,6 +914,10 @@ function run() {
                 ;;
             "Delete All Instances")
                 delete_all_instances
+                break
+                ;;
+	    "Reboot All Instances")
+                reboot_all_instances
                 break
                 ;;
             "Get All Instances Console URL")
